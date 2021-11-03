@@ -1,0 +1,7 @@
+LICENSE
+pyproject.toml
+setup.cfg
+scraper_pkg_Rem_G.egg-info/PKG-INFO
+scraper_pkg_Rem_G.egg-info/SOURCES.txt
+scraper_pkg_Rem_G.egg-info/dependency_links.txt
+scraper_pkg_Rem_G.egg-info/top_level.txt
