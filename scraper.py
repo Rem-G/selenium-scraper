@@ -10,6 +10,8 @@ import random
 import urllib
 import os
 import configparser
+import config
+
 
 class Scrap:
     def __init__(self, remote=False, headless=False, proxy=False, base_dir=f"{os.path.dirname(os.path.realpath(__file__))}/selenium_modules/"):
@@ -17,8 +19,6 @@ class Scrap:
         self.headless = headless
         self.cookies = None
         self.proxy = proxy
-        self.brightdata_username = brightdata_username
-        self.brightdata_pwd = brightdata_pwd
         self.base_dir = base_dir
         
         if proxy:
@@ -38,11 +38,10 @@ class Scrap:
             self.brightdata_pwd = config["BRIGHTDATA"].get("brightdata_pwd")
         except:
             if not retry:
-                import config
                 self.get_credentials()
 
 
-    def parse_url(self, url):
+    def __parse_url(self, url):
         p = urllib.parse.urlparse(url, 'http')
         netloc = p.netloc or p.path
         path = p.path if p.netloc else ''
@@ -69,7 +68,7 @@ class Scrap:
             "https": super_proxy_url,
         }
 
-    def driver(self, download_path=""):
+    def __driver(self, download_path=""):
         options = webdriver.ChromeOptions()
         # options.add_argument("--disable-gpu")
         options.add_argument("--no-sandbox")
@@ -104,23 +103,17 @@ class Scrap:
 
         return webdriver.Chrome(f'{self.base_dir}chromedriver', options=options)
 
-    def timeout_handler(self, signum, frame):
-        raise TimeoutException
-
     def get(self, url, timeout=60, has_timeout=False, sleep=0):
-        driver = self.driver()
+        driver = self.__driver()
         driver.set_page_load_timeout(timeout)
-        # signal.signal(signal.SIGALRM, self.timeout_handler)webdriver
-
         try:
-            # signal.alarm(int(timeout-timeout/10))
-            driver = self.process_get(driver, self.parse_url(url), sleep)
+            driver = self.process_get(driver, self.__parse_url(url), sleep)
 
         except Exception as e:
             print(e)
             if e is TimeoutException and not has_timeout:
                 self.log("Connection failed, retry")
-                return self.get(self.parse_url(url), timeout, True)
+                return self.get(self.__parse_url(url), timeout, True)
             else:
                 driver.execute_script("window.stop();")
         data = driver.page_source
@@ -128,24 +121,20 @@ class Scrap:
 
         return data
 
-    def process_get(self, driver, url, sleep):
-        driver.get(url)
+    def sleep_get(self, driver, url, sleep):
+        data = self.get(url)
         time.sleep(sleep)
-
-        return driver
+        return data
 
     def get_driver(self, timeout=60):
-        driver = self.driver()
+        driver = self.__driver()
         driver.set_page_load_timeout(timeout)
-        return 
+        return driver
 
     def get_body_text(self, url=None):
-        data = self.get(url)
-
-        soup = BeautifulSoup(data, 'lxml')
+        soup = BeautifulSoup(self.get(url), 'lxml')
         [s.decompose() for s in soup("script")]  # remove <script> elements
         if not soup.body:
             return None
-
         return soup.body.get_text()
     
